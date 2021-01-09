@@ -160,6 +160,19 @@ class Scoreboard:
 
             msg_title = "Pom War Season 3 Warboard"
             msg_footer = f"React with {Reactions.WAR_JOIN_REACTION} to join a team!"
+            msg_reactions = [
+                Reactions.WAR_JOIN_REACTION,
+                Reactions.UTC_MINUS_10_TO_9,
+                Reactions.UTC_MINUS_8_TO_7,
+                Reactions.UTC_MINUS_6_TO_5,
+                Reactions.UTC_MINUS_4_TO_3,
+                Reactions.UTC_MINUS_2_TO_1,
+                Reactions.UTC_PLUS_1_TO_2,
+                Reactions.UTC_PLUS_3_TO_4,
+                Reactions.UTC_PLUS_5_TO_6,
+                Reactions.UTC_PLUS_7_TO_8,
+                Reactions.UTC_PLUS_9_TO_10
+            ]
 
             channel_messages = await history.flatten()
             scoreboard_msg = None
@@ -179,8 +192,14 @@ class Scoreboard:
                     colour=Pomwars.ACTION_COLOUR,
                     _func=scoreboard_msg.edit if scoreboard_msg else channel.send
                 )
+
                 if new_msg:
-                    await new_msg.add_reaction(Reactions.WAR_JOIN_REACTION)
+                    scoreboard_msg = new_msg
+
+                current_reactions = scoreboard_msg.reactions
+                for reaction in msg_reactions:
+                    if reaction not in current_reactions:
+                        await scoreboard_msg.add_reaction(reaction)
             except discord.errors.Forbidden:
                 restricted_channels.append(channel)
 
