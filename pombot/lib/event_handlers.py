@@ -49,8 +49,10 @@ async def on_message_handler(bot: Bot, message: Message):
     await bot.process_commands(message)
 
 async def on_raw_reaction_add_handler(bot: Bot, payload: RawReactionActionEvent):
-    """Handle reactions being added to messages, assign users to teams when
-    they react."""
+    """Handle reactions being added to message. Assign users to teams when
+    they add the join reaction and assign their timezone if add one of the
+    timezone reactions.
+    """
     guild = bot.get_guild(payload.guild_id)
     channel = bot.get_channel(payload.channel_id)
     bot_roles = [Pomwars.KNIGHT_ROLE, Pomwars.VIKING_ROLE]
@@ -117,15 +119,62 @@ async def on_raw_reaction_add_handler(bot: Bot, payload: RawReactionActionEvent)
         if not user:
             await send_embed_message(
                 None,
-                title=f"Oops! Looks like I had some problem setting your timezone.",
-                description="You first need to join the event",
+                title="Oops! Looks like I had some problem setting your timezone.",
+                description="You first need to join the event.",
                 _func=payload.member.send
             )
             return
 
-        Storage.set_user_timezone(
-                payload.user_id,
-                timezone(timedelta(hours=TIMEZONES[payload.emoji.name]))
+        selected_timezone = timezone(timedelta(hours=TIMEZONES[payload.emoji.name]))
+        Storage.set_user_timezone(payload.user_id, selected_timezone)
+
+        await send_embed_message(
+                None,
+                title="Timezone selected!",
+                description=f"You're now in {str(selected_timezone)}.",
+                colour=Pomwars.ACTION_COLOUR,
+                icon_url=None,
+                _func=payload.member.send
+            )
+
+async def on_raw_reaction_remove_handler(bot: Bot, payload: RawReactionActionEvent):
+    """Handle reactions being removed from messages. Update the user's timezone
+    preference when they remove one of the timezone reactions.
+    """
+    guild = bot.get_guild(payload.guild_id)
+    channel = bot.get_channel(payload.channel_id)
+    member = bot.get_user(payload.user_id)
+
+    if not all([bot.is_ready(),
+                guild is not None,
+                channel is not None,
+                member is not None,
+                payload.user_id != bot.user.id]):
+        return
+
+    if channel.name != Pomwars.JOIN_CHANNEL_NAME:
+        return
+
+    if payload.emoji.name in TIMEZONES:
+        user = Storage.get_user_by_id(payload.user_id)
+        if not user:
+            return
+
+        unselected_timezone = timezone(
+            timedelta(hours=TIMEZONES[payload.emoji.name])
+        )
+
+        if unselected_timezone == user.timezone:
+            timezone_utc = timezone(timedelta(hours=0))
+            Storage.set_user_timezone(payload.user_id, timezone_utc)
+
+            await send_embed_message(
+                None,
+                title="Timezone reset!",
+                description=f"You're now in {str(timezone_utc)}.",
+                colour=Pomwars.ACTION_COLOUR,
+                icon_url=None,
+                _func=member.send
             )
 
 def _get_guild_team_or_random(guild_id: int) -> Team:

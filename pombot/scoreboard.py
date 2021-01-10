@@ -1,10 +1,12 @@
 from collections import Counter
+from datetime import datetime as dt
+from datetime import timedelta, timezone
 
 import discord.errors
 
 from pombot.storage import Storage
 from pombot.lib.types import ActionType, Team
-from pombot.config import Pomwars, Reactions
+from pombot.config import Pomwars, Reactions, TIMEZONES
 from pombot.lib.messages import send_embed_message
 
 class Scoreboard:
@@ -159,7 +161,12 @@ class Scoreboard:
             ]
 
             msg_title = "Pom War Season 3 Warboard"
-            msg_footer = f"React with {Reactions.WAR_JOIN_REACTION} to join a team!"
+            msg_footer = f"React with {Reactions.WAR_JOIN_REACTION} to join a team!\n"
+            msg_footer += "Once you've joined, react with a number for your timezone.\n"
+            for i, emoji in enumerate(TIMEZONES):
+                zone = timezone(timedelta(hours=TIMEZONES[emoji]))
+                msg_footer += f"{emoji} {zone}\t"
+
             msg_reactions = [
                 Reactions.WAR_JOIN_REACTION,
                 Reactions.UTC_MINUS_10_TO_9,

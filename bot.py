@@ -6,7 +6,9 @@ from discord.ext.commands import Bot
 from discord.message import Message
 
 from pombot.config import Config, Pomwars, Secrets
-from pombot.lib.event_handlers import on_message_handler, on_raw_reaction_add_handler
+from pombot.lib.event_handlers import (
+    on_message_handler, on_raw_reaction_add_handler, on_raw_reaction_remove_handler
+)
 
 _log = logging.getLogger(__name__)
 bot = Bot(command_prefix=Config.PREFIX, case_insensitive=True)
@@ -21,6 +23,11 @@ async def on_message(message: Message):
 async def on_raw_reaction_add(payload: RawReactionActionEvent):
     """Handle reactions being added to messages."""
     await on_raw_reaction_add_handler(bot, payload)
+
+@bot.event
+async def on_raw_reaction_remove(payload: RawReactionActionEvent):
+    """Handle reactions being removed from messages."""
+    await on_raw_reaction_remove_handler(bot, payload)
 
 def main():
     """Load cogs and start bot."""
